@@ -22,6 +22,26 @@ def parse_settings():
             f.write("\n".join(settings))
     return settings
 
+def get_csvs():
+    engine = sqlalchemy.create_engine('sqlite:///database')
+    settings = parse_settings();
+    with open("symbols.txt","r") as f:
+        symbols = f.read().split("\n")
+        symbols = [symbol for symbol in symbols if symbol != ""]
+    if(len(symbols) == 0):
+        print("Empty query!")
+    else:
+        for symbol in symbols:
+            filename = "{}_{}".format(symbol.upper(), settings[2])
+            if sqlalchemy.inspect(engine).has_table(filename):
+                stored = pd.read_sql(filename, engine)
+                stored.to_csv(filename+".csv",index=False)
+            else:
+                print("Error, file not found")
+        with open("symbols.txt", "w") as f:
+            f.write("")
+
+
 def data_query():
     engine = sqlalchemy.create_engine('sqlite:///database')
     settings = parse_settings();
@@ -172,7 +192,7 @@ def parser():
     )
     parser.add_argument(
         "--get_csv",
-        default="",
+        action='store_true',
         help="yo gobba",
     )
     return parser.parse_args();
@@ -195,3 +215,5 @@ if __name__ == "__main__":
         set_end_date(args)
     elif(args.set_interval != ""):
         set_interval(args)
+    elif(args.get_csv):
+        get_csvs()
